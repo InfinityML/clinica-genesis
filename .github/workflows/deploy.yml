@@ -1,0 +1,36 @@
+name: Despliegue de Clinica Genesis en Azure
+
+on:
+  push:
+    branches:
+      - master
+      - main  # Se activará automáticamente al subir cambios a master o main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Descargar el código desde tu repositorio de GitHub
+    - name: Descargar codigo
+      uses: actions/checkout@v4
+
+    # 2. Configurar el entorno de Java 17 en los servidores de GitHub
+    - name: Configurar JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: 'maven'
+
+    # 3. Compilar el proyecto y empaquetar el archivo .war omitiendo las pruebas unitarias
+    - name: Compilar y Empaquetar con Maven
+      run: mvn clean package -DskipTests
+
+    # 4. Conectarse a Azure usando el secreto guardado y subir la aplicación
+    - name: Desplegar en Azure Web App
+      uses: azure/webapps-deploy@v3
+      with:
+        app-name: 'clinica-genesis-web'
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        package: '${{ github.workspace }}/target/*.war'
